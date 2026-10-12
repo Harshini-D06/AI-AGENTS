@@ -2,6 +2,7 @@
 # TRAVEL AGENT TOOLS
 # ==============================
 
+
 def search_trains(source, destination, date):
     """Search available trains."""
 
@@ -11,7 +12,7 @@ def search_trains(source, destination, date):
             "departure": "07:30 AM",
             "arrival": "06:00 PM",
             "price": 1200,
-            "status": "Available"
+            "status": "Unavailable"
         },
         {
             "name": "Superfast Express",

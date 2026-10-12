@@ -7,6 +7,8 @@ from tools import (
     find_places
 )
 
+from memory import TravelMemory
+
 
 class TravelAgent:
 
@@ -21,6 +23,10 @@ class TravelAgent:
         hotel_preference,
         interest
     ):
+        # ==============================
+        # USER TRAVEL INFORMATION
+        # ==============================
+
         self.destination = destination
         self.transport = transport
         self.starting_location = starting_location
@@ -30,15 +36,69 @@ class TravelAgent:
         self.hotel_preference = hotel_preference
         self.interest = interest
 
+        # ==============================
+        # AGENT MEMORY
+        # ==============================
+
+        self.memory = TravelMemory()
+
+        self.memory.store(
+            "destination",
+            self.destination
+        )
+
+        self.memory.store(
+            "transport",
+            self.transport
+        )
+
+        self.memory.store(
+            "starting_location",
+            self.starting_location
+        )
+
+        self.memory.store(
+            "travel_date",
+            self.travel_date
+        )
+
+        self.memory.store(
+            "travelers",
+            self.travelers
+        )
+
+        self.memory.store(
+            "budget",
+            self.budget
+        )
+
+        self.memory.store(
+            "hotel_preference",
+            self.hotel_preference
+        )
+
+        self.memory.store(
+            "interest",
+            self.interest
+        )
+
+        # ==============================
+        # AGENT STATE
+        # ==============================
+
         self.transport_options = []
+
         self.selected_transport = None
+
         self.selected_hotel = None
+
         self.weather = None
+
         self.places = []
 
-    # --------------------------------
+    # ==========================================
     # SEARCH TRANSPORT
-    # --------------------------------
+    # ==========================================
 
     def search_transport(self):
 
@@ -70,30 +130,51 @@ class TravelAgent:
 
         print("✅ Transportation search completed.")
 
-    # --------------------------------
+    # ==========================================
     # SELECT TRANSPORT
-    # --------------------------------
+    # ==========================================
 
-    def select_transport(self):
+       def select_transport(self):
 
-        print("\n🧠 Agent is evaluating transportation options...")
+        print(
+            "\n🧠 Agent is evaluating "
+            "transportation options..."
+        )
 
-        available = [
-            option
-            for option in self.transport_options
-            if option["status"] == "Available"
-        ]
+        if not self.transport_options:
 
-        if not available:
-
-            print("❌ No transportation available.")
+            print(
+                "❌ No transportation options found."
+            )
 
             return False
 
-        self.selected_transport = min(
-            available,
+        # Agent first considers the cheapest option
+
+        first_option = min(
+            self.transport_options,
             key=lambda option: option["price"]
         )
+
+        print(
+            f"\n🔍 Agent considered: "
+            f"{first_option['name']}"
+        )
+
+        # Observe whether the first option is available
+
+        if first_option["status"] != "Available":
+
+            print(
+                f"❌ Observation: "
+                f"{first_option['name']} is unavailable."
+            )
+
+            return False
+
+        # First option is available
+
+        self.selected_transport = first_option
 
         print(
             f"✅ Selected: "
@@ -101,11 +182,21 @@ class TravelAgent:
             f"₹{self.selected_transport['price']}"
         )
 
+        self.memory.store(
+            "selected_transport",
+            self.selected_transport["name"]
+        )
+
+        self.memory.store(
+            "transport_cost_per_person",
+            self.selected_transport["price"]
+        )
+
         return True
 
-    # --------------------------------
+    # ==========================================
     # SEARCH HOTEL
-    # --------------------------------
+    # ==========================================
 
     def search_hotel(self):
 
@@ -125,13 +216,22 @@ class TravelAgent:
                 f"{self.selected_hotel['name']}"
             )
 
+            # Store hotel decision
+
+            self.memory.store(
+                "selected_hotel",
+                self.selected_hotel["name"]
+            )
+
         else:
 
-            print("❌ No matching hotel found.")
+            print(
+                "❌ No matching hotel found."
+            )
 
-    # --------------------------------
+    # ==========================================
     # WEATHER
-    # --------------------------------
+    # ==========================================
 
     def get_weather(self):
 
@@ -147,13 +247,22 @@ class TravelAgent:
             f"{self.weather['condition']}"
         )
 
-    # --------------------------------
+        # Store weather in memory
+
+        self.memory.store(
+            "weather",
+            self.weather
+        )
+
+    # ==========================================
     # PLACES
-    # --------------------------------
+    # ==========================================
 
     def get_places(self):
 
-        print("\n🏖️ Finding places to visit...")
+        print(
+            "\n🏖️ Finding places to visit..."
+        )
 
         self.places = find_places(
             self.destination,
@@ -162,9 +271,16 @@ class TravelAgent:
 
         print("✅ Places found.")
 
-    # --------------------------------
+        # Store places in memory
+
+        self.memory.store(
+            "places",
+            self.places
+        )
+
+    # ==========================================
     # RE-PLANNING
-    # --------------------------------
+    # ==========================================
 
     def replan(self):
 
@@ -193,6 +309,13 @@ class TravelAgent:
                 f"- ₹{self.selected_transport['price']}"
             )
 
+            # Store re-planning decision
+
+            self.memory.store(
+                "replanned_transport",
+                self.selected_transport["name"]
+            )
+
             return True
 
         print(
@@ -201,9 +324,9 @@ class TravelAgent:
 
         return False
 
-    # --------------------------------
+    # ==========================================
     # CALCULATE COST
-    # --------------------------------
+    # ==========================================
 
     def calculate_cost(self):
 
@@ -222,24 +345,47 @@ class TravelAgent:
             + hotel_cost
         )
 
+        # Store cost in memory
+
+        self.memory.store(
+            "transport_total",
+            transport_cost
+        )
+
+        self.memory.store(
+            "hotel_total",
+            hotel_cost
+        )
+
+        self.memory.store(
+            "total_cost",
+            total_cost
+        )
+
         return (
             transport_cost,
             hotel_cost,
             total_cost
         )
 
-    # --------------------------------
+    # ==========================================
     # SHOW FINAL ITINERARY
-    # --------------------------------
+    # ==========================================
 
     def show_itinerary(self):
 
-        transport_cost, hotel_cost, total_cost = (
-            self.calculate_cost()
-        )
+        (
+            transport_cost,
+            hotel_cost,
+            total_cost
+        ) = self.calculate_cost()
 
         print("\n" + "=" * 55)
-        print("          ✈️ FINAL TRAVEL ITINERARY")
+
+        print(
+            "          ✈️ FINAL TRAVEL ITINERARY"
+        )
+
         print("=" * 55)
 
         print(
@@ -262,7 +408,9 @@ class TravelAgent:
             f"{self.travelers}"
         )
 
+        # --------------------------------
         # TRANSPORT
+        # --------------------------------
 
         print("\n🚆 TRANSPORT")
 
@@ -284,7 +432,9 @@ class TravelAgent:
             f"   Cost: ₹{transport_cost}"
         )
 
+        # --------------------------------
         # HOTEL
+        # --------------------------------
 
         print("\n🏨 HOTEL")
 
@@ -301,7 +451,9 @@ class TravelAgent:
             f"   Cost: ₹{hotel_cost}"
         )
 
+        # --------------------------------
         # WEATHER
+        # --------------------------------
 
         print("\n🌤️ WEATHER")
 
@@ -310,7 +462,9 @@ class TravelAgent:
             f"{self.weather['condition']}"
         )
 
+        # --------------------------------
         # PLACES
+        # --------------------------------
 
         print("\n📸 PLACES TO VISIT")
 
@@ -320,7 +474,9 @@ class TravelAgent:
                 f"   • {place}"
             )
 
-        # COST
+        # --------------------------------
+        # COST SUMMARY
+        # --------------------------------
 
         print("\n" + "-" * 55)
 
@@ -348,15 +504,23 @@ class TravelAgent:
 
         print("-" * 55)
 
-    # --------------------------------
+    # ==========================================
     # RUN AGENT
-    # --------------------------------
+    # ==========================================
 
     def run(self):
 
         print("\n" + "=" * 55)
-        print("          🧠 AI AGENT STARTING")
+
+        print(
+            "          🧠 AI AGENT STARTING"
+        )
+
         print("=" * 55)
+
+        # --------------------------------
+        # GOAL
+        # --------------------------------
 
         print("\n🎯 Goal:")
 
@@ -381,15 +545,27 @@ class TravelAgent:
             f"{self.transport}"
         )
 
-        # STEP 1: SEARCH TRANSPORT
+        # --------------------------------
+        # MEMORY
+        # --------------------------------
+
+        self.memory.show_memory()
+
+        # --------------------------------
+        # TRANSPORT SEARCH
+        # --------------------------------
 
         self.search_transport()
 
-        # STEP 2: SELECT TRANSPORT
+        # --------------------------------
+        # TRANSPORT SELECTION
+        # --------------------------------
 
         success = self.select_transport()
 
-        # STEP 3: REPLAN IF NEEDED
+        # --------------------------------
+        # RE-PLANNING
+        # --------------------------------
 
         if not success:
 
@@ -401,7 +577,9 @@ class TravelAgent:
 
                 return False
 
-        # STEP 4: SEARCH HOTEL
+        # --------------------------------
+        # HOTEL
+        # --------------------------------
 
         self.search_hotel()
 
@@ -413,22 +591,36 @@ class TravelAgent:
 
             return False
 
-        # STEP 5: WEATHER
+        # --------------------------------
+        # WEATHER
+        # --------------------------------
 
         self.get_weather()
 
-        # STEP 6: PLACES
+        # --------------------------------
+        # PLACES
+        # --------------------------------
 
         self.get_places()
 
-        # STEP 7: OBSERVATION
+        # --------------------------------
+        # OBSERVATION
+        # --------------------------------
 
         print(
             "\n👀 Agent has observed all results."
         )
 
-        # STEP 8: FINAL ITINERARY
+        # --------------------------------
+        # FINAL ITINERARY
+        # --------------------------------
 
         self.show_itinerary()
+
+        # --------------------------------
+        # FINAL MEMORY
+        # --------------------------------
+
+        print("\n🧠 Agent updated its memory.")
 
         return True
